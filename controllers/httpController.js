@@ -60,6 +60,7 @@ exports.seriallatest = (request, response) => {
           const modifiedResult = result.map(item => ({
             id: item.id,
             timestamp: item.timestamp,
+            TS_raspi: item.TS_raspi,
             xacc: item.xacc,
             yacc: item.yacc,
             zacc: item.zacc,
@@ -102,6 +103,7 @@ exports.seriallatest = (request, response) => {
         const modifiedResult = result.map(item => ({
           id: item.id,
           timestamp: item.timestamp,
+          TS_raspi: item.TS_raspi,
           xacc: item.xacc,
           yacc: item.yacc,
           zacc: item.zacc,
@@ -143,6 +145,7 @@ exports.seriallatest = (request, response) => {
           const modifiedResult = result.map(item => ({
             id: item.id,
             timestamp: item.timestamp,
+            TS_raspi: item.TS_raspi,
             xacc: item.xacc,
             yacc: item.yacc,
             zacc: item.zacc,
@@ -184,6 +187,7 @@ exports.seriallatest = (request, response) => {
           const modifiedResult = result.map(item => ({
             id: item.id,
             timestamp: item.timestamp,
+            TS_raspi: item.TS_raspi,
             xacc: item.xacc,
             yacc: item.yacc,
             zacc: item.zacc,
