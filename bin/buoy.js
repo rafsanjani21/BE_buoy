@@ -19,9 +19,9 @@ const fs = require('fs');
 const http = require('http');
 const https = require('https');
 // konfigurasi https
-const privateKey = fs.readFileSync('/etc/letsencrypt/live/c-greenproject.org/privkey.pem', 'utf8');
-const certificate = fs.readFileSync('/etc/letsencrypt/live/c-greenproject.org/cert.pem', 'utf8');
-const ca = fs.readFileSync('/etc/letsencrypt/live/c-greenproject.org/chain.pem', 'utf8');
+const privateKey = fs.readFileSync(');
+const certificate = fs.readFileSync('');
+const ca = fs.readFileSync('');
 
 const credentials = {
   key: privateKey,
@@ -51,12 +51,12 @@ db.sequelize.sync();
 // set port, listen for requests
 const PORT = process.env.PORT || ;
 app.listen(PORT, () => {
-  console.log(`Server is running on  http://c-greenproject.org:${PORT}.`);
+  console.log(`Server is running on  http:${PORT}.`);
 });
 
 // Mulai server HTTPS
 const HTTPS_PORT = ;
 const httpsServer = https.createServer(credentials, app);
 httpsServer.listen(HTTPS_PORT, () => {
-  console.log(`HTTPS Server is running on https://c-greenproject.org:${HTTPS_PORT}`);
+  console.log(`HTTPS Server is running on https:${HTTPS_PORT}`);
 });
