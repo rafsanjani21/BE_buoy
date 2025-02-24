@@ -49,13 +49,13 @@ db.sequelize.sync();
  app.use(express.static('public'));
 
 // set port, listen for requests
-const PORT = process.env.PORT || 2112;
+const PORT = process.env.PORT || ;
 app.listen(PORT, () => {
   console.log(`Server is running on  http://c-greenproject.org:${PORT}.`);
 });
 
 // Mulai server HTTPS
-const HTTPS_PORT = 8040;
+const HTTPS_PORT = ;
 const httpsServer = https.createServer(credentials, app);
 httpsServer.listen(HTTPS_PORT, () => {
   console.log(`HTTPS Server is running on https://c-greenproject.org:${HTTPS_PORT}`);
