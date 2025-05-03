@@ -1,7 +1,8 @@
 const { Sequelize } = require('sequelize');
-const {Op} = require ('sequelize');
-const db = require('../models');  // Impor model
-const { response } = require('express');
+// const {Op} = require ('sequelize');
+const { Op, fn, col } = require("sequelize");
+const db = require('../models');  
+// const { response } = require('express');
 
 
 // definition for databases
@@ -22,7 +23,7 @@ exports.seriallatest = (request, response) => {
         .then((result) => {
           if (result) {
             response.json({
-              id: result.id,               // Gunakan "result" bukan "item"
+              id: result.id,               
               timestamp: result.timestamp,
               TS_raspi: result.TS_raspi,
               xacc: result.xacc,
@@ -248,11 +249,11 @@ exports.sccdaily = (request, response) => {
 
   scc.findAll({
     where: {
-      createdAt: { // Gunakan createdAt tanpa tanda kutip di Sequelize
+      createdAt: { 
         [Op.between]: [startdate, endDate],
       },
     },
-    order: [['createdAt', 'DESC']], // Pastikan ini sesuai dengan DB
+    order: [['createdAt', 'DESC']], 
   })
   .then((result) => {
     response.json(result);
@@ -552,36 +553,234 @@ startdate.setDate(currentDate.getDate() - 1);
 const endDate = new Date(currentDate);
 
 modbus.findAll({
-  where: {
-    createdAt: {
-      [Op.between]: [startdate, endDate],
-    },
-  },
-  order: [['id', 'DESC']],
-})
+      where: {
+        createdAt: {
+          [Op.between]: [startdate, endDate],
+        },
+      },
+      order: [['createdAt', 'ASC']],
+    })
+    .then((result) => {
+      const sampledData = [];
+      let lastSampleTime = null;
+  
+      for (const item of result) {
+        const itemTime = new Date(item.createdAt);
+        if (!lastSampleTime || (itemTime - lastSampleTime) >= 60000) { // 1 menit
+          sampledData.push({
+            timestamp: item.timestamp,
+            water_column_height: item.WaterLevel,
+            AnemometerSpeed: item.AnemometerSpeed,
+          });
+          lastSampleTime = itemTime;
+        }
+      }
+  
+      response.json(sampledData);
+    })
+    .catch((error) => {
+      console.error(error);
+      response.status(500).json({ error: 'Internal server error' });
+    });
+  };
+
+// modbus.findAll({
+//   where: {
+//     createdAt: {
+//       [Op.between]: [startdate, endDate],
+//     },
+//   },
+//   order: [['id', 'DESC']],
+// })
+// // .then((result) => {
+// //   response.json(result);
+// // }) 
 // .then((result) => {
+//   const modifiedResult = result.map(item => ({
+//     // id: item.id,
+//     timestamp: item.timestamp,
+//     water_column_height: item.WaterLevel, // Ubah nama field
+//     AnemometerSpeed: item.AnemometerSpeed,
+//     // Beaufort_scale: item.Beaufort_scale,
+//     // Angle: item.Angle,
+//     // Direction: item.Direction,
+//     // createdAt: item.createdAt,
+//     // updatedAt: item.updatedAt
+//   }));
+
+//   response.json(modifiedResult);
+// })
+
+// .catch((error) => {
+//   response.status(500).json({ error: 'Internal server error' });
+// });
+// };
+
+// exports.modbusweekly = (request, response) => {
+//   const currentDate = new Date();
+//   const startdate = new Date(currentDate);
+//   startdate.setDate(currentDate.getDate() - 7);
+//   const endDate = new Date(currentDate);
+
+//   modbus.findAll({
+//     where: {
+//       createdAt: {
+//         [Op.between]: [startdate, endDate],
+//       },
+//     },
+//     order: [['id', 'DESC']],
+//   })
+//   // .then((result) => {
+//   //   response.json(result);
+//   // }) 
+//   .then((result) => {
+//     const modifiedResult = result.map(item => ({
+//       timestamp: item.timestamp,
+//       water_column_height: item.WaterLevel, // Ubah nama field
+//       AnemometerSpeed: item.AnemometerSpeed,
+//     }));
+  
+//     response.json(modifiedResult);
+//   })
+  
+//   .catch((error) => {
+//     response.status(500).json({ error: 'Internal server error' });
+//   });
+// };
+
+// exports.modbusweekly = async (request, response) => {
+//   const currentDate = new Date();
+//   const startdate = new Date(currentDate);
+//   startdate.setDate(currentDate.getDate() - 7);
+//   const endDate = new Date(currentDate);
+
+//   try {
+//     // Query SQL untuk mengambil data setiap 30 menit
+//     const query = `
+//       SELECT *
+//       FROM modbusnew
+//       WHERE "createdAt" BETWEEN :startdate AND :endDate
+//       AND EXTRACT(MINUTE FROM "createdAt") IN (0, 30)
+//       AND EXTRACT(SECOND FROM "createdAt") = 0
+//       ORDER BY id DESC;
+//     `;
+
+//     const result = await modbus.sequelize.query(query, {
+//       replacements: { startdate, endDate },
+//       type: Sequelize.QueryTypes.SELECT,
+//       model: modbus,
+//       mapToModel: true,
+//     });
+
+//     // Format hasil ke struktur yang diinginkan
+//     const modifiedResult = result.map(item => ({
+//       timestamp: item.timestamp, // atau item.timestamp jika kolomnya berbeda
+//       water_column_height: item.WaterLevel,
+//       AnemometerSpeed: item.AnemometerSpeed,
+//     }));
+
+//     response.json(modifiedResult);
+//   } catch (error) {
+//     console.error(error);
+//     response.status(500).json({ error: 'Internal server error' });
+//   }
+// };
+
+// exports.modbusweekly = async (request, response) => {
+//   const currentDate = new Date();
+//   const startdate = new Date(currentDate);
+//   startdate.setDate(currentDate.getDate() - 7);
+//   const endDate = new Date(currentDate);
+
+//   const getDataByInterval = async (start, end) => {
+//     return await modbus.findAll({
+//       where: {
+//         createdAt: {
+//           [Op.between]: [start, end],
+//         },
+//       },
+//       order: [['id', 'DESC']],
+//     });
+//   };
+
+//   const result = [];
+//   let currentTime = startdate;
+
+//   // Loop through each 30 minute interval
+//   while (currentTime < endDate) {
+//     const nextTime = new Date(currentTime);
+//     nextTime.setMinutes(currentTime.getMinutes() + 30);
+
+//     // Get data for the current 30-minute interval
+//     const intervalData = await getDataByInterval(currentTime, nextTime);
+    
+//     // If data exists, add it to the result array
+//     if (intervalData.length > 0) {
+//       const modifiedResult = intervalData.map(item => ({
+//         timestamp: item.timestamp,
+//         water_column_height: item.WaterLevel, // Ubah nama field
+//         AnemometerSpeed: item.AnemometerSpeed,
+//       }));
+//       result.push(...modifiedResult);
+//     }
+
+//     // Move to the next interval
+//     currentTime = nextTime;
+//   }
+
+//   // Return the final result
 //   response.json(result);
-// }) 
-.then((result) => {
-  const modifiedResult = result.map(item => ({
-    id: item.id,
-    timestamp: item.timestamp,
-    water_column_height: item.WaterLevel, // Ubah nama field
-    AnemometerSpeed: item.AnemometerSpeed,
-    Beaufort_scale: item.Beaufort_scale,
-    Angle: item.Angle,
-    Direction: item.Direction,
-    createdAt: item.createdAt,
-    updatedAt: item.updatedAt
-  }));
+// };
 
-  response.json(modifiedResult);
-})
+// exports.modbusweekly = async (request, response) => {
+//   const endDate = new Date();
+//   const startDate = new Date(endDate);
+//   startDate.setDate(endDate.getDate() - 7);
 
-.catch((error) => {
-  response.status(500).json({ error: 'Internal server error' });
-});
-};
+//   try {
+//     const allData = await modbus.findAll({
+//       where: {
+//         createdAt: {
+//           [Op.between]: [startDate, endDate],
+//         },
+//       },
+//       order: [['createdAt', 'ASC']],
+//     });
+
+//     const intervalMs = 60000; // 1 menit dalam milidetik
+
+//     let currentBucketStart = new Date(startDate).getTime();
+//     const grouped = [];
+//     let i = 0;
+
+//     while (currentBucketStart < endDate.getTime()) {
+//       const currentBucketEnd = currentBucketStart + intervalMs;
+
+//       // Cari data pertama dalam bucket ini
+//       while (i < allData.length && new Date(allData[i].createdAt).getTime() < currentBucketStart) {
+//         i++;
+//       }
+
+//       if (i < allData.length && new Date(allData[i].createdAt).getTime() < currentBucketEnd) {
+//         const item = allData[i];
+//         grouped.push({
+//           timestamp: item.timestamp,
+//           water_column_height: item.WaterLevel,
+//           AnemometerSpeed: item.AnemometerSpeed,
+//         });
+//       }
+
+//       currentBucketStart = currentBucketEnd;
+//     }
+
+//     response.json(grouped);
+//   } catch (error) {
+//     console.error(error);
+//     response.status(500).json({ error: 'Internal server error' });
+//   }
+// };
+
+
 
 exports.modbusweekly = (request, response) => {
   const currentDate = new Date();
@@ -595,31 +794,33 @@ exports.modbusweekly = (request, response) => {
         [Op.between]: [startdate, endDate],
       },
     },
-    order: [['id', 'DESC']],
+    order: [['createdAt', 'ASC']],
   })
-  // .then((result) => {
-  //   response.json(result);
-  // }) 
   .then((result) => {
-    const modifiedResult = result.map(item => ({
-      id: item.id,
-      timestamp: item.timestamp,
-      water_column_height: item.WaterLevel, // Ubah nama field
-      AnemometerSpeed: item.AnemometerSpeed,
-      Beaufort_scale: item.Beaufort_scale,
-      Angle: item.Angle,
-      Direction: item.Direction,
-      createdAt: item.createdAt,
-      updatedAt: item.updatedAt
-    }));
-  
-    response.json(modifiedResult);
+    const sampledData = [];
+    let lastSampleTime = null;
+
+    for (const item of result) {
+      const itemTime = new Date(item.createdAt);
+      if (!lastSampleTime || (itemTime - lastSampleTime) >= 600000) { // 10 menit
+        sampledData.push({
+          timestamp: item.timestamp,
+          water_column_height: item.WaterLevel,
+          AnemometerSpeed: item.AnemometerSpeed,
+        });
+        lastSampleTime = itemTime;
+      }
+    }
+
+    response.json(sampledData);
   })
-  
   .catch((error) => {
+    console.error(error);
     response.status(500).json({ error: 'Internal server error' });
   });
 };
+
+
 
 exports.modbusmonthly = (request, response) => {
   const currentDate = new Date();
@@ -633,31 +834,57 @@ exports.modbusmonthly = (request, response) => {
         [Op.between]: [startdate, endDate],
       },
     },
-    order: [['id', 'DESC']],
+    order: [['createdAt', 'ASC']],
   })
-  // .then((result) => {
-  //   response.json(result);
-  // }) 
   .then((result) => {
-    const modifiedResult = result.map(item => ({
-      id: item.id,
-      timestamp: item.timestamp,
-      water_column_height: item.WaterLevel, // Ubah nama field
-      AnemometerSpeed: item.AnemometerSpeed,
-      Beaufort_scale: item.Beaufort_scale,
-      Angle: item.Angle,
-      Direction: item.Direction,
-      createdAt: item.createdAt,
-      updatedAt: item.updatedAt
-    }));
-  
-    response.json(modifiedResult);
+    const sampledData = [];
+    let lastSampleTime = null;
+
+    for (const item of result) {
+      const itemTime = new Date(item.createdAt);
+      if (!lastSampleTime || (itemTime - lastSampleTime) >= 3600000) { // 60 menit
+        sampledData.push({
+          timestamp: item.timestamp,
+          water_column_height: item.WaterLevel,
+          AnemometerSpeed: item.AnemometerSpeed,
+        });
+        lastSampleTime = itemTime;
+      }
+    }
+
+    response.json(sampledData);
   })
-  
   .catch((error) => {
+    console.error(error);
     response.status(500).json({ error: 'Internal server error' });
   });
-};  
+};
+
+//   modbus.findAll({
+//     where: {
+//       createdAt: {
+//         [Op.between]: [startdate, endDate],
+//       },
+//     },
+//     order: [['id', 'DESC']],
+//   })
+//   // .then((result) => {
+//   //   response.json(result);
+//   // }) 
+//   .then((result) => {
+//     const modifiedResult = result.map(item => ({
+//       timestamp: item.timestamp,
+//       water_column_height: item.WaterLevel, // Ubah nama field
+//       AnemometerSpeed: item.AnemometerSpeed,
+//     }));
+  
+//     response.json(modifiedResult);
+//   })
+  
+//   .catch((error) => {
+//     response.status(500).json({ error: 'Internal server error' });
+//   });
+// };  
 
 //CONTROLLER FOR RAW
 exports.rawlatest = (request, response) => {
